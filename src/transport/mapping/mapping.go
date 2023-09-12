@@ -1,0 +1,169 @@
+package mapping
+
+import (
+	"log"
+	"net"
+	"strconv"
+
+	"gvisor.dev/gvisor/pkg/tcpip"
+	"gvisor.dev/gvisor/pkg/tcpip/header"
+	"gvisor.dev/gvisor/pkg/tcpip/network/ipv4"
+	"gvisor.dev/gvisor/pkg/tcpip/network/ipv6"
+	"gvisor.dev/gvisor/pkg/tcpip/stack"
+	"gvisor.dev/gvisor/pkg/tcpip/transport/tcp"
+)
+
+type HostMapping struct {
+	Host string
+	Port uint16
+}
+
+func Setup(s *stack.Stack, mappingPrefix string, hostMappings []HostMapping) {
+	setupNATMasquarade(
+		s,
+		ipv4.ProtocolNumber,
+		mappingPrefix,
+		hostMappings,
+	)
+}
+
+func setupNATMasquarade(s *stack.Stack, netProto tcpip.NetworkProtocolNumber, mappingPrefix string, hostMappings []HostMapping) {
+
+	ipv6 := netProto == ipv6.ProtocolNumber
+	ipt := s.IPTables()
+
+	dstMask := net.ParseIP("255.255.255.255").To4()
+	rules := make([]stack.Rule, 0)
+
+	for i, mapping := range hostMappings {
+		mappedIp, err := resolveIP(mapping.Host)
+
+		if err != nil {
+			continue
+		}
+
+		rule := stack.Rule{
+			Filter: stack.IPHeaderFilter{
+				CheckProtocol: false,
+				Dst:           tcpip.Address(net.ParseIP(mappingPrefix + strconv.Itoa(i+1)).To4()),
+				DstMask:       tcpip.Address(dstMask),
+			},
+			Target: &stack.DNATTarget{
+				NetworkProtocol: ipv4.ProtocolNumber,
+				Addr:            tcpip.Address(mappedIp.To4()),
+				Port:            mapping.Port,
+			},
+			Matchers: []stack.Matcher{
+				&TCPMatcher{
+					destinationPort: mapping.Port,
+				},
+			},
+		}
+
+		rules = append(rules, rule)
+	}
+
+	preroutes := len(rules)
+
+	// Add prerouting accept
+	rules = append(rules, stack.Rule{Target: &stack.AcceptTarget{}})
+
+	// Add Input accept
+	rules = append(rules, stack.Rule{Target: &stack.AcceptTarget{}})
+
+	// Add Forward accept
+	rules = append(rules, stack.Rule{Target: &stack.AcceptTarget{}})
+
+	// Add Output accept
+	rules = append(rules, stack.Rule{Target: &stack.AcceptTarget{}})
+
+	// Add Postrouting (masquarde)
+	rules = append(rules, stack.Rule{
+		Filter: stack.IPHeaderFilter{
+			Protocol:      tcp.ProtocolNumber,
+			CheckProtocol: false,
+		},
+		Target: &stack.MasqueradeTarget{NetworkProtocol: netProto},
+	})
+
+	// Add Postrouting accept
+	rules = append(rules, stack.Rule{Target: &stack.AcceptTarget{}})
+
+	table := stack.Table{
+		Rules: rules,
+		BuiltinChains: [stack.NumHooks]int{
+			stack.Prerouting:  0,
+			stack.Input:       preroutes + 1,
+			stack.Forward:     preroutes + 2,
+			stack.Output:      preroutes + 3,
+			stack.Postrouting: preroutes + 4,
+		},
+	}
+
+	ipt.ReplaceTable(stack.NATID, table, ipv6)
+}
+
+func resolveIP(host string) (net.IP, error) {
+	ip := net.ParseIP(host)
+	if ip == nil {
+		// Hostname is not in IP format, resolve it
+		resolvedIP, err := net.ResolveIPAddr("ip4", host)
+		if err != nil {
+			log.Println("Unable to resolve IP", host, err.Error())
+			return nil, err
+		} else {
+			return resolvedIP.IP, nil
+		}
+	} else {
+		// Hostname is already an IP address
+		return ip, nil
+	}
+}
+
+type TCPMatcher struct {
+	destinationPort uint16
+}
+
+func (tm *TCPMatcher) Match(hook stack.Hook, pkt stack.PacketBufferPtr, _, _ string) (bool, bool) {
+	switch pkt.NetworkProtocolNumber {
+	case header.IPv4ProtocolNumber:
+		netHeader := header.IPv4(pkt.NetworkHeader().Slice())
+		if netHeader.TransportProtocol() != header.TCPProtocolNumber {
+			return false, false
+		}
+
+		// We don't match fragments.
+		if frag := netHeader.FragmentOffset(); frag != 0 {
+			if frag == 1 {
+				return false, true
+			}
+			return false, false
+		}
+
+	case header.IPv6ProtocolNumber:
+		// As in Linux, we do not perform an IPv6 fragment check. See
+		// xt_action_param.fragoff in
+		// include/linux/netfilter/x_tables.h.
+		if header.IPv6(pkt.NetworkHeader().Slice()).TransportProtocol() != header.TCPProtocolNumber {
+			return false, false
+		}
+
+	default:
+		// We don't know the network protocol.
+		return false, false
+	}
+
+	tcpHeader := header.TCP(pkt.TransportHeader().Slice())
+	if len(tcpHeader) < header.TCPMinimumSize {
+		// There's no valid TCP header here, so we drop the packet immediately.
+		return false, true
+	}
+
+	// Check whether the source and destination ports are within the
+	// matching range.
+	if destinationPort := tcpHeader.DestinationPort(); destinationPort != tm.destinationPort {
+		return false, false
+	}
+
+	return true, false
+}

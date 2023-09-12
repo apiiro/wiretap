@@ -25,6 +25,7 @@ import (
 	"wiretap/peer"
 	"wiretap/transport/api"
 	"wiretap/transport/icmp"
+	"wiretap/transport/mapping"
 	"wiretap/transport/tcp"
 	"wiretap/transport/udp"
 	"wiretap/transport/userspace"
@@ -483,6 +484,7 @@ func (c serveCmdConfig) Run() {
 		Tnet:      transportHandler,
 		StackLock: &lock,
 	}
+
 	s.SetTransportProtocolHandler(gudp.ProtocolNumber, udp.Handler(udpConfig))
 
 	// Make new relay device.
@@ -506,6 +508,11 @@ func (c serveCmdConfig) Run() {
 		err = devE2EE.Up()
 		check("failed to bring up e2ee device", err)
 	}
+
+	mapping.Setup(s, "10.100.0.", []mapping.HostMapping{{
+		Host: "10.2.0.4",
+		Port: 80,
+	}})
 
 	// Handlers that require long-running routines:
 
