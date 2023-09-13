@@ -490,7 +490,10 @@ func (c serveCmdConfig) Run() {
 	// Make new relay device.
 	devRelay := device.NewDevice(tunRelay, conn.NewDefaultBind(), device.NewLogger(logger, ""))
 	// Configure wireguard.
-	fmt.Println(configRelay.AsIPC())
+	if c.debug {
+		log.Println(configRelay.AsIPC())
+	}
+
 	err = devRelay.IpcSet(configRelay.AsIPC())
 	check("failed to configure relay wireguard device", err)
 	err = devRelay.Up()
