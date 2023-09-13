@@ -14,8 +14,8 @@ import (
 )
 
 type HostMapping struct {
-	Host string
-	Port uint16
+	Host  string
+	Ports []uint16
 }
 
 func Setup(s *stack.Stack, mappingPrefix string, hostMappings []HostMapping) {
@@ -42,25 +42,27 @@ func setupNATMasquarade(s *stack.Stack, netProto tcpip.NetworkProtocolNumber, ma
 			continue
 		}
 
-		rule := stack.Rule{
-			Filter: stack.IPHeaderFilter{
-				CheckProtocol: false,
-				Dst:           tcpip.Address(net.ParseIP(mappingPrefix + strconv.Itoa(i+1)).To4()),
-				DstMask:       tcpip.Address(dstMask),
-			},
-			Target: &stack.DNATTarget{
-				NetworkProtocol: ipv4.ProtocolNumber,
-				Addr:            tcpip.Address(mappedIp.To4()),
-				Port:            mapping.Port,
-			},
-			Matchers: []stack.Matcher{
-				&TCPMatcher{
-					destinationPort: mapping.Port,
+		for _, port := range mapping.Ports {
+			rule := stack.Rule{
+				Filter: stack.IPHeaderFilter{
+					CheckProtocol: false,
+					Dst:           tcpip.Address(net.ParseIP(mappingPrefix + strconv.Itoa(i+1)).To4()),
+					DstMask:       tcpip.Address(dstMask),
 				},
-			},
-		}
+				Target: &stack.DNATTarget{
+					NetworkProtocol: ipv4.ProtocolNumber,
+					Addr:            tcpip.Address(mappedIp.To4()),
+					Port:            port,
+				},
+				Matchers: []stack.Matcher{
+					&TCPMatcher{
+						destinationPort: port,
+					},
+				},
+			}
 
-		rules = append(rules, rule)
+			rules = append(rules, rule)
+		}
 	}
 
 	preroutes := len(rules)
