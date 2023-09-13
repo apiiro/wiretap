@@ -36,9 +36,6 @@ services:
     build: 
       context: .
       dockerfile: wiretap.Dockerfile
-      args:
-        http_proxy: $http_proxy
-        https_proxy: $https_proxy
     image: wiretap:latest
     networks:
       exposed:
@@ -54,9 +51,10 @@ services:
   server: 
     depends_on: 
       - client 
-    image: wiretap:latest
-    ports:
-      - "6060:6060"
+    build: 
+      context: .
+      dockerfile: wiretap-agent.Dockerfile
+    image: wiretap-agent:latest
     networks:
       exposed:
         ipv4_address: 10.1.0.3
@@ -64,13 +62,11 @@ services:
       target:
         ipv4_address: 10.2.0.3
         ipv6_address: fd:2::3
-    cap_add:
-      - NET_ADMIN
-      - SYS_MODULE
-    sysctls:
-      - net.ipv6.conf.all.disable_ipv6=0
     environment:
-    - DISPLAY=host.docker.internal:0
+      - WIRETAP_RELAY_INTERFACE_PRIVATEKEY=uMp1Ysfwf/SAkV50eIZcJeeKnw9IC1tf1EvWJ73a/X8=
+      - WIRETAP_RELAY_PEER_PUBLICKEY=LI/q39q4zZHzgUNYMBw79fbNudr1l/XraIu+iJ54Big=
+      - WIRETAP_RELAY_PEER_ENDPOINT=10.1.0.2:51820
+      - WIRETAP_SIMPLE=true      
   target:
     depends_on: 
       - client 
