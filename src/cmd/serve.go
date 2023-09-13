@@ -511,12 +511,18 @@ func (c serveCmdConfig) Run() {
 		check("failed to bring up e2ee device", err)
 	}
 
-	mapping.Setup(s, "10.100.0.", []mapping.HostMapping{{
-		Host:  "10.2.0.4",
-		Ports: []uint16{80, 81},
-	}})
-
 	// Handlers that require long-running routines:
+
+	// IP mapping every 10 minutes
+	mapping.SetupFromConfig(s)
+	ticker := time.NewTicker(10 * time.Minute)
+	wg.Add(1)
+	go func() {
+		for range ticker.C {
+			mapping.SetupFromConfig(s)
+		}
+		wg.Done()
+	}()
 
 	// Start ICMP Handler.
 	wg.Add(1)

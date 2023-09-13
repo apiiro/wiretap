@@ -33,9 +33,9 @@
 
 services:
   client:
-    build: 
-      context: .
-      dockerfile: wiretap.Dockerfile
+    # build: 
+    #   context: .
+    #   dockerfile: wiretap.Dockerfile
     image: wiretap:latest
     networks:
       exposed:
@@ -66,6 +66,7 @@ services:
       - AGENT_PRIVATE_KEY=uMp1Ysfwf/SAkV50eIZcJeeKnw9IC1tf1EvWJ73a/X8=
       - APIIRO_PUBLIC_KEY=LI/q39q4zZHzgUNYMBw79fbNudr1l/XraIu+iJ54Big=
       - APIIRO_ENDPOINT=10.1.0.2:51820
+      - MAPPING_PREFIX=10.100.0
   target:
     depends_on: 
       - client 

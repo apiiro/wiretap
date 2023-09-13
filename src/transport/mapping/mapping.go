@@ -5,6 +5,7 @@ import (
 	"net"
 	"strconv"
 
+	"github.com/spf13/viper"
 	"gvisor.dev/gvisor/pkg/tcpip"
 	"gvisor.dev/gvisor/pkg/tcpip/header"
 	"gvisor.dev/gvisor/pkg/tcpip/network/ipv4"
@@ -18,7 +19,15 @@ type HostMapping struct {
 	Ports []uint16
 }
 
+func SetupFromConfig(s *stack.Stack) {
+	Setup(s, viper.GetString("Mapping.Prefix")+".", []HostMapping{{
+		Host:  "10.2.0.4",
+		Ports: []uint16{80, 81},
+	}})
+}
+
 func Setup(s *stack.Stack, mappingPrefix string, hostMappings []HostMapping) {
+	log.Println("Mapping IPs", mappingPrefix)
 	setupNATMasquarade(
 		s,
 		ipv4.ProtocolNumber,
