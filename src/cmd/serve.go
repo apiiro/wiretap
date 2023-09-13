@@ -23,7 +23,6 @@ import (
 	gudp "gvisor.dev/gvisor/pkg/tcpip/transport/udp"
 
 	"wiretap/peer"
-	"wiretap/transport/api"
 	"wiretap/transport/icmp"
 	"wiretap/transport/mapping"
 	"wiretap/transport/tcp"
@@ -513,8 +512,8 @@ func (c serveCmdConfig) Run() {
 	}
 
 	mapping.Setup(s, "10.100.0.", []mapping.HostMapping{{
-		Host: "10.2.0.4",
-		Port: 80,
+		Host:  "10.2.0.4",
+		Ports: []uint16{80, 81},
 	}})
 
 	// Handlers that require long-running routines:
@@ -527,22 +526,22 @@ func (c serveCmdConfig) Run() {
 	}()
 
 	// Start API handler.
-	wg.Add(1)
-	go func() {
-		ns := api.NetworkState{
-			NextClientRelayAddr4: netip.MustParseAddr(c.clientAddr4Relay),
-			NextClientRelayAddr6: netip.MustParseAddr(c.clientAddr6Relay),
-			NextServerRelayAddr4: netip.MustParseAddr(viper.GetString("Relay.Interface.ipv4")),
-			NextServerRelayAddr6: netip.MustParseAddr(viper.GetString("Relay.Interface.ipv6")),
-			NextClientE2EEAddr4:  netip.MustParseAddr(c.clientAddr4E2EE),
-			NextClientE2EEAddr6:  netip.MustParseAddr(c.clientAddr6E2EE),
-			NextServerE2EEAddr4:  netip.MustParseAddr(viper.GetString("E2EE.Interface.ipv4")),
-			NextServerE2EEAddr6:  netip.MustParseAddr(viper.GetString("E2EE.Interface.ipv6")),
-			ApiAddr:              netip.MustParseAddr(viper.GetString("E2EE.Interface.api")),
-		}
-		api.Handle(transportHandler, devRelay, devE2EE, &configRelay, &configE2EE, apiAddr, uint16(ApiPort), &lock, &ns)
-		wg.Done()
-	}()
+	// wg.Add(1)
+	// go func() {
+	// 	ns := api.NetworkState{
+	// 		NextClientRelayAddr4: netip.MustParseAddr(c.clientAddr4Relay),
+	// 		NextClientRelayAddr6: netip.MustParseAddr(c.clientAddr6Relay),
+	// 		NextServerRelayAddr4: netip.MustParseAddr(viper.GetString("Relay.Interface.ipv4")),
+	// 		NextServerRelayAddr6: netip.MustParseAddr(viper.GetString("Relay.Interface.ipv6")),
+	// 		NextClientE2EEAddr4:  netip.MustParseAddr(c.clientAddr4E2EE),
+	// 		NextClientE2EEAddr6:  netip.MustParseAddr(c.clientAddr6E2EE),
+	// 		NextServerE2EEAddr4:  netip.MustParseAddr(viper.GetString("E2EE.Interface.ipv4")),
+	// 		NextServerE2EEAddr6:  netip.MustParseAddr(viper.GetString("E2EE.Interface.ipv6")),
+	// 		ApiAddr:              netip.MustParseAddr(viper.GetString("E2EE.Interface.api")),
+	// 	}
+	// 	api.Handle(transportHandler, devRelay, devE2EE, &configRelay, &configE2EE, apiAddr, uint16(ApiPort), &lock, &ns)
+	// 	wg.Done()
+	// }()
 
 	wg.Wait()
 }
