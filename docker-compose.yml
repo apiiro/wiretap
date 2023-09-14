@@ -63,12 +63,12 @@ services:
         ipv4_address: 10.2.0.3
         ipv6_address: fd:2::3
     environment:
-      - AGENT_PRIVATE_KEY=uMp1Ysfwf/SAkV50eIZcJeeKnw9IC1tf1EvWJ73a/X8=
-      - APIIRO_PUBLIC_KEY=LI/q39q4zZHzgUNYMBw79fbNudr1l/XraIu+iJ54Big=
+      - AGENT_PRIVATE_KEY=
+      - APIIRO_PUBLIC_KEY=
       - APIIRO_ENDPOINT=10.1.0.2:51820
       - MAPPING_PREFIX=10.100.0
       - MAPPING_HOSTS=10.2.0.4,example.com:443
-      - CONFIG_ENDPOINT=http://localhost:5014/rest-api/v1.0/broker/configuration
+      - CONFIG_ENDPOINT=https://app.apiiro.com/rest-api/v1.0/broker/configuration
       - CONFIG_TOKEN=xxxAccessTokenxxx
   target:
     depends_on: 
