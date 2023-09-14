@@ -62,9 +62,12 @@ services:
       target:
         ipv4_address: 10.2.0.3
         ipv6_address: fd:2::3
+    command: 
+      - --debug
     environment:
       - AGENT_PRIVATE_KEY=
       - APIIRO_PUBLIC_KEY=
+      - TUNNEL_SUBNET=172.16.0
       - APIIRO_ENDPOINT=10.1.0.2:51820
       - MAPPING_PREFIX=10.100.0
       - MAPPING_HOSTS=10.2.0.4,example.com:443
