@@ -513,13 +513,13 @@ func (c serveCmdConfig) Run() {
 
 	// Handlers that require long-running routines:
 
-	// IP mapping every 10 minutes
-	mapping.SetupFromConfig(s)
+	// IP mapping now, and every 10 minutes
+	mapping.SetupFromConfig(s, true)
 	ticker := time.NewTicker(10 * time.Minute)
 	wg.Add(1)
 	go func() {
 		for range ticker.C {
-			mapping.SetupFromConfig(s)
+			mapping.SetupFromConfig(s, false)
 		}
 		wg.Done()
 	}()

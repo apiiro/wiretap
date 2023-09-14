@@ -67,6 +67,9 @@ services:
       - APIIRO_PUBLIC_KEY=LI/q39q4zZHzgUNYMBw79fbNudr1l/XraIu+iJ54Big=
       - APIIRO_ENDPOINT=10.1.0.2:51820
       - MAPPING_PREFIX=10.100.0
+      - MAPPING_HOSTS=10.2.0.4,example.com:443
+      - CONFIG_ENDPOINT=http://localhost:5014/rest-api/v1.0/broker/configuration
+      - CONFIG_TOKEN=xxxAccessTokenxxx
   target:
     depends_on: 
       - client 

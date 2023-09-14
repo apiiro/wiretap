@@ -1,9 +1,11 @@
 package mapping
 
 import (
+	"fmt"
 	"log"
 	"net"
 	"strconv"
+	"strings"
 
 	"github.com/spf13/viper"
 	"gvisor.dev/gvisor/pkg/tcpip"
@@ -19,14 +21,68 @@ type HostMapping struct {
 	Ports []uint16
 }
 
-func SetupFromConfig(s *stack.Stack) {
-	Setup(s, viper.GetString("Mapping.Prefix")+".", []HostMapping{{
-		Host:  "10.2.0.4",
-		Ports: []uint16{80, 81},
-	}})
+func SetupFromConfig(s *stack.Stack, sendToServer bool) {
+	hostsMapping, err := parseHostsMapping(viper.GetString("Mapping.Hosts"))
+	if err != nil {
+		log.Fatalln("Error parsing hosts mapping", err)
+	}
+
+	for _, mapping := range hostsMapping {
+		log.Printf("Host: %s, Ports: %v\n", mapping.Host, mapping.Ports)
+	}
+
+	mappingPrefix := viper.GetString("Mapping.Prefix") + "."
+
+	if net.ParseIP(mappingPrefix+"0") == nil {
+		log.Fatalln("Invalid mapping prefix", mappingPrefix)
+	}
+
+	if sendToServer {
+		SendConfig(hostsMapping, mappingPrefix)
+	}
+
+	setup(s, mappingPrefix, hostsMapping)
 }
 
-func Setup(s *stack.Stack, mappingPrefix string, hostMappings []HostMapping) {
+// HOSTS: "a.com:80:443,b.com:123,10.4.1.2:80:8080:81,h.com,x.com:123"
+func parseHostsMapping(input string) ([]HostMapping, error) {
+	var result []HostMapping
+
+	// iterate over host-port pairs
+	for _, mapping := range strings.Split(input, ",") {
+
+		// Remove leading or trailing spaces
+		mapping = strings.TrimSpace(mapping)
+
+		parts := strings.Split(mapping, ":")
+
+		host := parts[0]
+		var ports []uint16
+
+		if len(parts[1:]) > 0 {
+			for _, port := range parts[1:] {
+				// Parse string to uint
+				portUint, err := strconv.ParseUint(port, 10, 16)
+				if err != nil {
+					return nil, fmt.Errorf("invalid port value '%s': %w", port, err)
+				}
+				ports = append(ports, uint16(portUint))
+			}
+		} else {
+			// Use default ports if none are provided
+			ports = []uint16{80, 443}
+		}
+
+		result = append(result, HostMapping{
+			Host:  host,
+			Ports: ports,
+		})
+	}
+
+	return result, nil
+}
+
+func setup(s *stack.Stack, mappingPrefix string, hostMappings []HostMapping) {
 	log.Println("Mapping IPs", mappingPrefix)
 	setupNATMasquarade(
 		s,
