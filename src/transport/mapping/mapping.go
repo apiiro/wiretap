@@ -132,8 +132,8 @@ func setupNATMasquarade(s *stack.Stack, netProto tcpip.NetworkProtocolNumber, ma
 
 	preroutes := len(rules)
 
-	// Add prerouting accept
-	rules = append(rules, stack.Rule{Target: &stack.AcceptTarget{}})
+	// Add prerouting drop
+	rules = append(rules, stack.Rule{Target: &stack.DropTarget{}})
 
 	// Add Input accept
 	rules = append(rules, stack.Rule{Target: &stack.AcceptTarget{}})
