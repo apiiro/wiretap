@@ -23,8 +23,8 @@ import (
 	gudp "gvisor.dev/gvisor/pkg/tcpip/transport/udp"
 
 	"wiretap/peer"
-	"wiretap/transport/api"
 	"wiretap/transport/icmp"
+	"wiretap/transport/mapping"
 	"wiretap/transport/tcp"
 	"wiretap/transport/udp"
 	"wiretap/transport/userspace"
@@ -483,12 +483,16 @@ func (c serveCmdConfig) Run() {
 		Tnet:      transportHandler,
 		StackLock: &lock,
 	}
+
 	s.SetTransportProtocolHandler(gudp.ProtocolNumber, udp.Handler(udpConfig))
 
 	// Make new relay device.
 	devRelay := device.NewDevice(tunRelay, conn.NewDefaultBind(), device.NewLogger(logger, ""))
 	// Configure wireguard.
-	fmt.Println(configRelay.AsIPC())
+	if c.debug {
+		log.Println(configRelay.AsIPC())
+	}
+
 	err = devRelay.IpcSet(configRelay.AsIPC())
 	check("failed to configure relay wireguard device", err)
 	err = devRelay.Up()
@@ -509,6 +513,17 @@ func (c serveCmdConfig) Run() {
 
 	// Handlers that require long-running routines:
 
+	// IP mapping now, and every 10 minutes
+	mapping.SetupFromConfig(s, true)
+	ticker := time.NewTicker(10 * time.Minute)
+	wg.Add(1)
+	go func() {
+		for range ticker.C {
+			mapping.SetupFromConfig(s, false)
+		}
+		wg.Done()
+	}()
+
 	// Start ICMP Handler.
 	wg.Add(1)
 	go func() {
@@ -517,22 +532,22 @@ func (c serveCmdConfig) Run() {
 	}()
 
 	// Start API handler.
-	wg.Add(1)
-	go func() {
-		ns := api.NetworkState{
-			NextClientRelayAddr4: netip.MustParseAddr(c.clientAddr4Relay),
-			NextClientRelayAddr6: netip.MustParseAddr(c.clientAddr6Relay),
-			NextServerRelayAddr4: netip.MustParseAddr(viper.GetString("Relay.Interface.ipv4")),
-			NextServerRelayAddr6: netip.MustParseAddr(viper.GetString("Relay.Interface.ipv6")),
-			NextClientE2EEAddr4:  netip.MustParseAddr(c.clientAddr4E2EE),
-			NextClientE2EEAddr6:  netip.MustParseAddr(c.clientAddr6E2EE),
-			NextServerE2EEAddr4:  netip.MustParseAddr(viper.GetString("E2EE.Interface.ipv4")),
-			NextServerE2EEAddr6:  netip.MustParseAddr(viper.GetString("E2EE.Interface.ipv6")),
-			ApiAddr:              netip.MustParseAddr(viper.GetString("E2EE.Interface.api")),
-		}
-		api.Handle(transportHandler, devRelay, devE2EE, &configRelay, &configE2EE, apiAddr, uint16(ApiPort), &lock, &ns)
-		wg.Done()
-	}()
+	// wg.Add(1)
+	// go func() {
+	// 	ns := api.NetworkState{
+	// 		NextClientRelayAddr4: netip.MustParseAddr(c.clientAddr4Relay),
+	// 		NextClientRelayAddr6: netip.MustParseAddr(c.clientAddr6Relay),
+	// 		NextServerRelayAddr4: netip.MustParseAddr(viper.GetString("Relay.Interface.ipv4")),
+	// 		NextServerRelayAddr6: netip.MustParseAddr(viper.GetString("Relay.Interface.ipv6")),
+	// 		NextClientE2EEAddr4:  netip.MustParseAddr(c.clientAddr4E2EE),
+	// 		NextClientE2EEAddr6:  netip.MustParseAddr(c.clientAddr6E2EE),
+	// 		NextServerE2EEAddr4:  netip.MustParseAddr(viper.GetString("E2EE.Interface.ipv4")),
+	// 		NextServerE2EEAddr6:  netip.MustParseAddr(viper.GetString("E2EE.Interface.ipv6")),
+	// 		ApiAddr:              netip.MustParseAddr(viper.GetString("E2EE.Interface.api")),
+	// 	}
+	// 	api.Handle(transportHandler, devRelay, devE2EE, &configRelay, &configE2EE, apiAddr, uint16(ApiPort), &lock, &ns)
+	// 	wg.Done()
+	// }()
 
 	wg.Wait()
 }

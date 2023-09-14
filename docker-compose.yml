@@ -33,12 +33,9 @@
 
 services:
   client:
-    build: 
-      context: .
-      dockerfile: wiretap.Dockerfile
-      args:
-        http_proxy: $http_proxy
-        https_proxy: $https_proxy
+    # build: 
+    #   context: .
+    #   dockerfile: wiretap.Dockerfile
     image: wiretap:latest
     networks:
       exposed:
@@ -54,9 +51,10 @@ services:
   server: 
     depends_on: 
       - client 
-    image: wiretap:latest
-    ports:
-      - "6060:6060"
+    build: 
+      context: .
+      dockerfile: wiretap-agent.Dockerfile
+    image: wiretap-agent:latest
     networks:
       exposed:
         ipv4_address: 10.1.0.3
@@ -64,13 +62,14 @@ services:
       target:
         ipv4_address: 10.2.0.3
         ipv6_address: fd:2::3
-    cap_add:
-      - NET_ADMIN
-      - SYS_MODULE
-    sysctls:
-      - net.ipv6.conf.all.disable_ipv6=0
     environment:
-    - DISPLAY=host.docker.internal:0
+      - AGENT_PRIVATE_KEY=uMp1Ysfwf/SAkV50eIZcJeeKnw9IC1tf1EvWJ73a/X8=
+      - APIIRO_PUBLIC_KEY=LI/q39q4zZHzgUNYMBw79fbNudr1l/XraIu+iJ54Big=
+      - APIIRO_ENDPOINT=10.1.0.2:51820
+      - MAPPING_PREFIX=10.100.0
+      - MAPPING_HOSTS=10.2.0.4,example.com:443
+      - CONFIG_ENDPOINT=http://localhost:5014/rest-api/v1.0/broker/configuration
+      - CONFIG_TOKEN=xxxAccessTokenxxx
   target:
     depends_on: 
       - client 
@@ -79,27 +78,27 @@ services:
       target:
         ipv4_address: 10.2.0.4
         ipv6_address: fd:2::4
-      target2:
-        ipv4_address: 10.3.0.4
-        ipv6_address: fd:3::4
+      # target2:
+      #   ipv4_address: 10.3.0.4
+      #   ipv6_address: fd:3::4
     cap_add:
       - NET_ADMIN
       - SYS_MODULE
     sysctls:
       - net.ipv6.conf.all.disable_ipv6=0
-  target2:
-    depends_on: 
-      - client 
-    image: wiretap:latest
-    networks:
-      target2:
-        ipv4_address: 10.3.0.5
-        ipv6_address: fd:3::5
-    cap_add:
-      - NET_ADMIN
-      - SYS_MODULE
-    sysctls:
-      - net.ipv6.conf.all.disable_ipv6=0
+  # target2:
+  #   depends_on: 
+  #     - client 
+  #   image: wiretap:latest
+  #   networks:
+  #     target2:
+  #       ipv4_address: 10.3.0.5
+  #       ipv6_address: fd:3::5
+  #   cap_add:
+  #     - NET_ADMIN
+  #     - SYS_MODULE
+  #   sysctls:
+  #     - net.ipv6.conf.all.disable_ipv6=0
 
 
 networks:
@@ -123,13 +122,13 @@ networks:
           gateway: 10.2.0.1
         - subnet: fd:2::/64
           gateway: fd:2::1
-  target2:
-    enable_ipv6: true
-    driver: bridge
-    name: target2
-    ipam:
-      config:
-        - subnet: 10.3.0.0/16
-          gateway: 10.3.0.1
-        - subnet: fd:3::/64
-          gateway: fd:3::1
+  # target2:
+  #   enable_ipv6: true
+  #   driver: bridge
+  #   name: target2
+  #   ipam:
+  #     config:
+  #       - subnet: 10.3.0.0/16
+  #         gateway: 10.3.0.1
+  #       - subnet: fd:3::/64
+  #         gateway: fd:3::1

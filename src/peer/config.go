@@ -400,9 +400,7 @@ func (c *Config) AsFile() string {
 func (c *Config) AsShareableFile() string {
 	var s strings.Builder
 
-	s.WriteString("[Peer]\n")
 	s.WriteString(fmt.Sprintf("PublicKey = %s\n", c.config.PrivateKey.PublicKey().String()))
-	s.WriteString("AllowedIPs = 0.0.0.0/32\n")
 
 	return s.String()
 }
