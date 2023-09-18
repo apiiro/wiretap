@@ -37,7 +37,7 @@ type serveCmdConfig struct {
 	clientAddr4Relay  string
 	clientAddr6Relay  string
 	quiet             bool
-	debug             bool
+	verbose           bool
 	simple            bool
 	logging           bool
 	logFile           string
@@ -72,7 +72,7 @@ var serveCmd = serveCmdConfig{
 	clientAddr4Relay:  ClientRelaySubnet4.Addr().Next().Next().String(),
 	clientAddr6Relay:  ClientRelaySubnet6.Addr().Next().Next().String(),
 	quiet:             false,
-	debug:             false,
+	verbose:           false,
 	simple:            false,
 	logging:           false,
 	logFile:           "wiretap.log",
@@ -118,7 +118,7 @@ func init() {
 	// Flags.
 	cmd.Flags().StringVarP(&serveCmd.configFile, "config-file", "f", serveCmd.configFile, "wireguard config file to read from")
 	cmd.Flags().BoolVarP(&serveCmd.quiet, "quiet", "q", serveCmd.quiet, "silence wiretap log messages")
-	cmd.Flags().BoolVarP(&serveCmd.debug, "debug", "d", serveCmd.debug, "enable wireguard log messages")
+	cmd.Flags().BoolVarP(&serveCmd.verbose, "verbose", "v", serveCmd.verbose, "enable verbose log messages")
 	cmd.Flags().BoolVarP(&serveCmd.simple, "simple", "", serveCmd.simple, "disable multihop and multiclient features for a simpler setup")
 	cmd.Flags().BoolVarP(&serveCmd.logging, "log", "l", serveCmd.logging, "enable logging to file")
 	cmd.Flags().StringVarP(&serveCmd.logFile, "log-file", "o", serveCmd.logFile, "write log to this filename")
@@ -141,8 +141,11 @@ func init() {
 	err = viper.BindPFlag("disableipv6", cmd.Flags().Lookup("disable-ipv6"))
 	check("error binding flag to viper", err)
 
-	// Quiet and debug flags must be used independently.
-	cmd.MarkFlagsMutuallyExclusive("debug", "quiet")
+	err = viper.BindPFlag("verbose", cmd.Flags().Lookup("verbose"))
+	check("error binding flag to viper", err)
+
+	// Quiet and verbose flags must be used independently.
+	cmd.MarkFlagsMutuallyExclusive("verbose", "quiet")
 
 	// Deprecated flags, kept for backwards compatibility.
 	cmd.Flags().StringP("private-relay", "", "", "wireguard private key for relay interface")
@@ -454,7 +457,7 @@ func (c serveCmdConfig) Run() {
 	}()
 
 	var logger int
-	if c.debug {
+	if viper.GetBool("verbose") {
 		logger = device.LogLevelVerbose
 	} else if c.quiet {
 		logger = device.LogLevelSilent
@@ -489,10 +492,6 @@ func (c serveCmdConfig) Run() {
 	// Make new relay device.
 	devRelay := device.NewDevice(tunRelay, conn.NewDefaultBind(), device.NewLogger(logger, ""))
 	// Configure wireguard.
-	if c.debug {
-		log.Println(configRelay.AsIPC())
-	}
-
 	err = devRelay.IpcSet(configRelay.AsIPC())
 	check("failed to configure relay wireguard device", err)
 	err = devRelay.Up()

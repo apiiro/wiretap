@@ -62,8 +62,6 @@ services:
       target:
         ipv4_address: 10.2.0.3
         ipv6_address: fd:2::3
-    command: 
-      - --debug
     environment:
       - AGENT_PRIVATE_KEY=
       - APIIRO_PUBLIC_KEY=
@@ -73,6 +71,7 @@ services:
       - MAPPING_HOSTS=10.2.0.4,example.com:443
       - CONFIG_ENDPOINT=https://app.apiiro.com/rest-api/v1.0/broker/configuration
       - CONFIG_TOKEN=xxxAccessTokenxxx
+      - VERBOSE_LOGS=true
   target:
     depends_on: 
       - client 
