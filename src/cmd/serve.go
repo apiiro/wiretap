@@ -5,8 +5,11 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net/http"
 	"net/netip"
 	"os"
+	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -514,10 +517,10 @@ func (c serveCmdConfig) Run() {
 
 	// IP mapping now, and every 10 minutes
 	mapping.SetupFromConfig(s, true)
-	ticker := time.NewTicker(10 * time.Minute)
+	mappingTicker := time.NewTicker(10 * time.Minute)
 	wg.Add(1)
 	go func() {
-		for range ticker.C {
+		for range mappingTicker.C {
 			mapping.SetupFromConfig(s, false)
 		}
 		wg.Done()
@@ -548,5 +551,58 @@ func (c serveCmdConfig) Run() {
 	// 	wg.Done()
 	// }()
 
+	// Start Healthcheck handler
+	wg.Add(1)
+	go func() {
+		http.HandleFunc("/health", handleHealth(devRelay))
+		log.Fatal(http.ListenAndServe(":8080", nil))
+		wg.Done()
+	}()
+
 	wg.Wait()
+}
+
+func handleHealth(devRelay *device.Device) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ipc, err := devRelay.IpcGet()
+		if err != nil {
+			writeErr(w, err)
+			return
+		}
+
+		last_handshake_time_sec := int64(0)
+		regex := regexp.MustCompile(`last_handshake_time_sec=(\d+)`) // Match "xcv=" followed by one or more digits
+		match := regex.FindStringSubmatch(ipc)
+		if len(match) > 1 {
+			last_handshake_time_sec, _ = strconv.ParseInt(match[1], 10, 64)
+		}
+
+		if last_handshake_time_sec == 0 {
+			w.WriteHeader(503)
+			_, err = io.WriteString(w, "-1")
+			if err != nil {
+				writeErr(w, err)
+			}
+			return
+		}
+
+		secs_since_handshake := time.Now().Unix() - last_handshake_time_sec
+		if secs_since_handshake > 180 {
+			w.WriteHeader(503)
+		}
+
+		_, err = io.WriteString(w, "Seconds since handshake: "+strconv.Itoa(int(secs_since_handshake)))
+		if err != nil {
+			writeErr(w, err)
+			return
+		}
+	}
+}
+
+func writeErr(w http.ResponseWriter, err error) {
+	w.WriteHeader(http.StatusInternalServerError)
+	_, err = io.WriteString(w, err.Error())
+	if err != nil {
+		log.Printf("API Error: %v", err)
+	}
 }

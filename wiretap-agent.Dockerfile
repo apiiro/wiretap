@@ -11,6 +11,8 @@ RUN make OUTPUT=./wiretap
 
 FROM alpine:3.18
 
+RUN apk --no-cache add curl
+
 COPY --from=build /wiretap/wiretap /wiretap/wiretap
 COPY --from=build /wiretap/start.sh /wiretap/start.sh
 
