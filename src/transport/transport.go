@@ -14,6 +14,7 @@ import (
 
 	"github.com/armon/go-socks5"
 	"github.com/google/gopacket"
+	"github.com/spf13/viper"
 	"gvisor.dev/gvisor/pkg/tcpip"
 	"gvisor.dev/gvisor/pkg/tcpip/adapters/gonet"
 	"gvisor.dev/gvisor/pkg/tcpip/header"
@@ -140,11 +141,10 @@ func SendPacket(s *stack.Stack, packet []byte, addr *tcpip.FullAddress, netProto
 
 func Proxy(src net.Conn, dst net.Conn) {
 	var wg sync.WaitGroup
-
 	wg.Add(1)
 	go func() {
 		_, err := io.Copy(src, dst)
-		if err != nil {
+		if err != nil && viper.GetBool("verbose") {
 			log.Printf("error copying between connections: %v\n", err)
 		}
 		src.Close()
@@ -153,7 +153,7 @@ func Proxy(src net.Conn, dst net.Conn) {
 
 	// Copy from peer to new connection.
 	_, nerr := io.Copy(dst, src)
-	if nerr != nil {
+	if nerr != nil && viper.GetBool("verbose") {
 		log.Printf("error copying between connections: %v\n", nerr)
 	}
 	dst.Close()
