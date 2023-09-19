@@ -22,5 +22,4 @@ USER wiretap
 
 WORKDIR /wiretap
 
-# Run webserver for testing
 ENTRYPOINT ["/wiretap/start.sh"]
