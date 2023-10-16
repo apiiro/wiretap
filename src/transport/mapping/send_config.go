@@ -2,6 +2,7 @@ package mapping
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -61,7 +62,12 @@ func sendRequest(endpoint, accessToken string, data NetworkBrokerConfigurationRe
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 
 	// Send request
-	client := http.Client{}
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: viper.GetBool("Skip.Ssl.Verify")},
+	}
+
+	client := &http.Client{Transport: tr}
+
 	resp, err := client.Do(req)
 	if err != nil {
 		return err

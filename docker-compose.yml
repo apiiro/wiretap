@@ -1,7 +1,7 @@
 #  network layout for wiretap testing
 #
 # ┌──────────┐
-# │ client   │
+# │ server   │
 # │          │
 # │ 10.1.0.2 │
 # │ fd:1::2  ├┬───────────────────────┐
@@ -10,7 +10,7 @@
 # │ 10.1.0.3 ├┴───────────────────────┘
 # │ fd:1::3  │
 # │          │
-# │ server   │
+# │ agent    │
 # │          │
 # │ 10.2.0.3 │
 # │ fd:2::3  ├┬───────────────────────┐
@@ -32,7 +32,7 @@
 # └──────────┘
 
 services:
-  client:
+  server:
     # build: 
     #   context: .
     #   dockerfile: wiretap.Dockerfile
@@ -48,9 +48,9 @@ services:
       - net.ipv6.conf.all.disable_ipv6=0
     environment:
     - DISPLAY=host.docker.internal:0
-  server: 
+  agent: 
     depends_on: 
-      - client 
+      - server 
     build: 
       context: .
       dockerfile: wiretap-agent.Dockerfile
@@ -63,18 +63,19 @@ services:
         ipv4_address: 10.2.0.3
         ipv6_address: fd:2::3
     environment:
-      - AGENT_PRIVATE_KEY=
-      - APIIRO_PUBLIC_KEY=
+      - AGENT_PRIVATE_KEY=4O6c5RatRHKQuhBGATy/Z5gTDsrgqdXEVM/ugJUtwmo=
+      - APIIRO_PUBLIC_KEY=4cw7P2SkpcIERT3fOSBSeq+h0hRm+qXv2UPvVw3bYwI=
       - TUNNEL_SUBNET=172.16.0
       - APIIRO_ENDPOINT=10.1.0.2:51820
       - MAPPING_PREFIX=10.100.0
       - MAPPING_HOSTS=10.2.0.4,example.com:443
-      - CONFIG_ENDPOINT=https://app.apiiro.com/rest-api/v1.0/broker/configuration
+      - CONFIG_ENDPOINT=https://34.149.164.82/rest-api/v1.0/broker/configuration
+      - SKIP_SSL_VERIFY=true
       - CONFIG_TOKEN=xxxAccessTokenxxx
       - VERBOSE_LOGS=true
   target:
     depends_on: 
-      - client 
+      - agent 
     image: wiretap:latest
     networks:
       target:
