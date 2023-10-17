@@ -61,13 +61,14 @@ func sendRequest(endpoint, accessToken string, data NetworkBrokerConfigurationRe
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 
+	// Create transport from DefaultTransport
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: viper.GetBool("Skip.Ssl.Verify")} // SSL verification is skipped
+
+	// Create http client with modified transport
+	client := &http.Client{Transport: transport}
+
 	// Send request
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: viper.GetBool("Skip.Ssl.Verify")},
-	}
-
-	client := &http.Client{Transport: tr}
-
 	resp, err := client.Do(req)
 	if err != nil {
 		return err
