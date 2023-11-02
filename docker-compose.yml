@@ -63,16 +63,17 @@ services:
         ipv4_address: 10.2.0.3
         ipv6_address: fd:2::3
     environment:
-      - AGENT_PRIVATE_KEY=4O6c5RatRHKQuhBGATy/Z5gTDsrgqdXEVM/ugJUtwmo=
-      - APIIRO_PUBLIC_KEY=4cw7P2SkpcIERT3fOSBSeq+h0hRm+qXv2UPvVw3bYwI=
+      - AGENT_PRIVATE_KEY=
+      - APIIRO_PUBLIC_KEY=
       - TUNNEL_SUBNET=172.16.0
       - APIIRO_ENDPOINT=10.1.0.2:51820
       - MAPPING_PREFIX=10.100.0
       - MAPPING_HOSTS=10.2.0.4,example.com:443
-      - CONFIG_ENDPOINT=https://34.149.164.82/rest-api/v1.0/broker/configuration
+      - CONFIG_ENDPOINT=https://app-staging.apiiro.com/rest-api/v1.0/broker/configuration
       - SKIP_SSL_VERIFY=true
       - CONFIG_TOKEN=xxxAccessTokenxxx
       - VERBOSE_LOGS=true
+      - RELAY_MTU=1300
   target:
     depends_on: 
       - agent 
@@ -81,28 +82,11 @@ services:
       target:
         ipv4_address: 10.2.0.4
         ipv6_address: fd:2::4
-      # target2:
-      #   ipv4_address: 10.3.0.4
-      #   ipv6_address: fd:3::4
     cap_add:
       - NET_ADMIN
       - SYS_MODULE
     sysctls:
       - net.ipv6.conf.all.disable_ipv6=0
-  # target2:
-  #   depends_on: 
-  #     - client 
-  #   image: wiretap:latest
-  #   networks:
-  #     target2:
-  #       ipv4_address: 10.3.0.5
-  #       ipv6_address: fd:3::5
-  #   cap_add:
-  #     - NET_ADMIN
-  #     - SYS_MODULE
-  #   sysctls:
-  #     - net.ipv6.conf.all.disable_ipv6=0
-
 
 networks:
   exposed:
@@ -125,13 +109,3 @@ networks:
           gateway: 10.2.0.1
         - subnet: fd:2::/64
           gateway: fd:2::1
-  # target2:
-  #   enable_ipv6: true
-  #   driver: bridge
-  #   name: target2
-  #   ipam:
-  #     config:
-  #       - subnet: 10.3.0.0/16
-  #         gateway: 10.3.0.1
-  #       - subnet: fd:3::/64
-  #         gateway: fd:3::1

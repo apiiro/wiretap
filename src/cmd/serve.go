@@ -377,6 +377,7 @@ func (c serveCmdConfig) Run() {
 	fmt.Println("Relay configuration:")
 	fmt.Println(strings.Repeat("─", 32))
 	fmt.Print(configRelay.AsShareableFile())
+	fmt.Print()
 	fmt.Println(strings.Repeat("─", 32))
 	if !viper.GetBool("simple") {
 		fmt.Println()
@@ -406,10 +407,12 @@ func (c serveCmdConfig) Run() {
 		relayAddrs = append(relayAddrs, apiAddr)
 	}
 
+	mtu := viper.GetInt("Relay.Interface.mtu")
+	log.Printf("MTU: %d\n", mtu)
 	tunRelay, tnetRelay, err := netstack.CreateNetTUN(
 		relayAddrs,
 		[]netip.Addr{},
-		viper.GetInt("Relay.Interface.mtu"),
+		mtu,
 	)
 	check("failed to create relay TUN", err)
 
