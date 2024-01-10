@@ -111,12 +111,12 @@ func setupNATMasquarade(s *stack.Stack, netProto tcpip.NetworkProtocolNumber, ma
 			rule := stack.Rule{
 				Filter: stack.IPHeaderFilter{
 					CheckProtocol: false,
-					Dst:           tcpip.Address(net.ParseIP(mappingPrefix + strconv.Itoa(i+1)).To4()),
-					DstMask:       tcpip.Address(dstMask),
+					Dst:           tcpip.AddrFrom4Slice(net.ParseIP(mappingPrefix + strconv.Itoa(i+1)).To4()),
+					DstMask:       tcpip.AddrFrom4Slice(dstMask),
 				},
 				Target: &stack.DNATTarget{
 					NetworkProtocol: ipv4.ProtocolNumber,
-					Addr:            tcpip.Address(mappedIp.To4()),
+					Addr:            tcpip.AddrFrom4Slice(mappedIp.To4()),
 					Port:            port,
 				},
 				Matchers: []stack.Matcher{

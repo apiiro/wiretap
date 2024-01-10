@@ -1,4 +1,4 @@
-FROM golang:1.20 AS build
+FROM golang:1.21 AS build
 
 WORKDIR /wiretap
 COPY ./src/go.mod ./src/go.sum ./
@@ -9,9 +9,11 @@ COPY ./src /wiretap
 
 RUN make OUTPUT=./wiretap
 
-FROM alpine:3.18
+FROM alpine:3.19
 
-RUN apk --no-cache add curl
+RUN apk update && \
+    apk upgrade && \
+    apk --no-cache add curl
 
 COPY --from=build /wiretap/wiretap /wiretap/wiretap
 COPY --from=build /wiretap/start.sh /wiretap/start.sh

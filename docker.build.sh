@@ -2,7 +2,7 @@
 
 # ENV_PREFIX=apiiro-rnd-network-broker
 ENV_PREFIX=apiiro/network-broker
-AGENT_TAG=0.8
+AGENT_TAG=0.9
 docker buildx build --platform linux/amd64 \
   --push --pull \
   -t gcr.io/$ENV_PREFIX/broker-agent:latest \
