@@ -20,7 +20,6 @@ import (
 	netipv6 "golang.org/x/net/ipv6"
 
 	"golang.zx2c4.com/wireguard/tun/netstack"
-	"gvisor.dev/gvisor/pkg/bufferv2"
 	"gvisor.dev/gvisor/pkg/tcpip"
 	"gvisor.dev/gvisor/pkg/tcpip/header"
 	"gvisor.dev/gvisor/pkg/tcpip/network/ipv4"
@@ -214,7 +213,7 @@ func handleConn(conn udpConn, port int, s *stack.Stack) {
 			pktChan, _ := connMapLookup(conn)
 			pkt := <-pktChan
 			// Exit if packet is empty, other goroutine wants us to close.
-			if pkt.IsNil() {
+			if pkt == nil {
 				return
 			}
 
@@ -252,15 +251,11 @@ func handleConn(conn udpConn, port int, s *stack.Stack) {
 				}
 			}
 
-			// Force closing of goroutine by reinjecting buffer (DecRef() to make nil pointer)
+			// Force closing of goroutine by injecting nil pointer
 			newConn.Close()
 			pktChan, ok := connMapLookup(conn)
 			if ok {
-				nilPkt := stack.NewPacketBuffer(stack.PacketBufferOptions{
-					Payload: bufferv2.MakeWithData([]byte{}),
-				})
-				nilPkt.DecRef()
-				pktChan <- nilPkt
+				pktChan <- nil
 			}
 			return
 		}
@@ -341,7 +336,7 @@ func sendResponse(conn udpConn, data []byte, s *stack.Stack) {
 		return
 	}
 
-	tcpipErr := transport.SendPacket(s, buf.Bytes(), &tcpip.FullAddress{NIC: 1, Addr: tcpip.Address(conn.Source.Addr().AsSlice())}, proto)
+	tcpipErr := transport.SendPacket(s, buf.Bytes(), &tcpip.FullAddress{NIC: 1, Addr: tcpip.AddrFromSlice(conn.Source.Addr().AsSlice())}, proto)
 	if tcpipErr != nil {
 		log.Println("failed to write:", tcpipErr)
 		return
@@ -362,7 +357,7 @@ func sendUnreachable(packet stack.PacketBufferPtr, s *stack.Stack) {
 	transHeader.SetChecksum(0)
 	transHeaderPayload := transHeader.Payload()
 
-	isIpv6 := netHeader.DestinationAddress().To4() == ""
+	isIpv6 := netHeader.DestinationAddress().To4() == tcpip.Address{}
 
 	if isIpv6 {
 		ipv6Layer = &layers.IPv6{}
