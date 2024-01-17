@@ -11,21 +11,19 @@ builds:
       - -trimpath
     goos:
       - linux
-      - windows
       - darwin
     goarch:
       - arm64
       - amd64
-      - arm
-      - 386
 archives:
-  - format_overrides:
-      - goos: windows
-        format: zip
+  - format: binary
+  # - id: default
+  #   files:
+  #     - "start.sh"
 checksum:
   name_template: "checksums.txt"
 snapshot:
-  name_template: "{{ incpatch .Version }}-next"
+  name_template: "{{ .Version }}"
 changelog:
   use: github-native
 #  sort: asc

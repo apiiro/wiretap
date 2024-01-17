@@ -76,7 +76,7 @@ var serveCmd = serveCmdConfig{
 	clientAddr6Relay:  ClientRelaySubnet6.Addr().Next().Next().String(),
 	quiet:             false,
 	verbose:           false,
-	simple:            false,
+	simple:            true,
 	logging:           false,
 	logFile:           "wiretap.log",
 	catchTimeout:      5 * 1000,
@@ -117,6 +117,8 @@ func init() {
 	}
 
 	rootCmd.AddCommand(cmd)
+
+	viper.Set("simple", true)
 
 	// Flags.
 	cmd.Flags().StringVarP(&serveCmd.configFile, "config-file", "f", serveCmd.configFile, "wireguard config file to read from")

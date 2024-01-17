@@ -53,7 +53,8 @@ var (
 // Root wiretap command, doesn't do much on its own.
 // Prints help by default.
 var rootCmd = &cobra.Command{
-	Use: "wiretap",
+	Use:   "wiretap",
+	Short: "Wiretap - Apiiro fork",
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) == 0 {
 			err := cmd.Help()

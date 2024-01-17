@@ -1,5 +1,7 @@
 FROM golang:1.21 AS build
 
+ARG VERSION
+
 WORKDIR /wiretap
 COPY ./src/go.mod ./src/go.sum ./
 RUN go mod download -x
@@ -7,7 +9,7 @@ RUN go mod download -x
 # Build Wiretap
 COPY ./src /wiretap
 
-RUN make OUTPUT=./wiretap
+RUN make OUTPUT=./wiretap VERSION=${VERSION}
 
 FROM alpine:3.19
 
