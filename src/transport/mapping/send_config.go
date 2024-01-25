@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/tls"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -21,7 +22,7 @@ type NetworkBrokerConfigurationRequest struct {
 }
 
 func SendConfig(hostsMapping []HostMapping, mappingPrefix string) {
-	endpoint := viper.GetString("Config.Endpoint")
+	domain := viper.GetString("Apiiro.Domain")
 	accessToken := viper.GetString("Config.Token")
 
 	hosts := []HostConfigurationRequest{}
@@ -37,7 +38,7 @@ func SendConfig(hostsMapping []HostMapping, mappingPrefix string) {
 		MappedPrefix: mappingPrefix,
 	}
 
-	err := sendRequest(endpoint, accessToken, configRequest)
+	err := sendRequest(fmt.Sprintf("https://%s/rest-api/v1.0/broker/configuration", domain), accessToken, configRequest)
 	if err != nil {
 		log.Println("Error sending config:", err)
 	}

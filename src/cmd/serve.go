@@ -25,6 +25,7 @@ import (
 	gtcp "gvisor.dev/gvisor/pkg/tcpip/transport/tcp"
 	gudp "gvisor.dev/gvisor/pkg/tcpip/transport/udp"
 
+	"wiretap/config"
 	"wiretap/peer"
 	"wiretap/transport/icmp"
 	"wiretap/transport/mapping"
@@ -65,6 +66,7 @@ type wiretapDefaultConfig struct {
 	apiV4Addr        string
 	keepalive        int
 	mtu              int
+	apiiroDomain     string
 }
 
 // Defaults for serve command.
@@ -100,6 +102,7 @@ var wiretapDefault = wiretapDefaultConfig{
 	apiV4Addr:        ApiV4Subnets.Addr().Next().Next().String(),
 	keepalive:        Keepalive,
 	mtu:              MTU,
+	apiiroDomain:     "app.apiiro.com",
 }
 
 // Add serve command and set flags.
@@ -220,6 +223,8 @@ func init() {
 
 	viper.SetDefault("E2EE.Peer.endpoint", wiretapDefault.endpointE2EE)
 
+	viper.SetDefault("Apiiro.Domain", wiretapDefault.apiiroDomain)
+
 	cmd.Flags().SortFlags = false
 
 	// Hide deprecated flags and log flags.
@@ -300,6 +305,14 @@ func (c serveCmdConfig) Run() {
 			log.SetOutput(f)
 		} else {
 			log.SetOutput(io.MultiWriter(os.Stdout, f))
+		}
+	}
+
+	// Get server public key
+	if !viper.IsSet("Relay.Peer.publickey") {
+		publicKey, err := config.GetServerPublicKey()
+		if err == nil && publicKey != "" {
+			viper.Set("Relay.Peer.publickey", publicKey)
 		}
 	}
 

@@ -69,7 +69,7 @@ services:
       - APIIRO_ENDPOINT=10.1.0.2:51820
       - MAPPING_PREFIX=10.100.0
       - MAPPING_HOSTS=10.2.0.4,example.com:443
-      - CONFIG_ENDPOINT=https://app-staging.apiiro.com/rest-api/v1.0/broker/configuration
+      - APIIRO_DOMAIN=app-staging.apiiro.com
       - SKIP_SSL_VERIFY=true
       - CONFIG_TOKEN=xxxAccessTokenxxx
       - VERBOSE_LOGS=true
