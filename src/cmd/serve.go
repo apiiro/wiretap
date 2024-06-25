@@ -308,12 +308,13 @@ func (c serveCmdConfig) Run() {
 		}
 	}
 
+	log.Println("Initializing")
+
 	// Get server public key
-	if !viper.IsSet("Relay.Peer.publickey") {
-		publicKey, err := config.GetServerPublicKey()
-		if err == nil && publicKey != "" {
-			viper.Set("Relay.Peer.publickey", publicKey)
-		}
+	publicKey, err := config.GetServerPublicKey()
+	check("Error getting server public key", err)
+	if err == nil && publicKey != "" {
+		viper.Set("Relay.Peer.publickey", publicKey)
 	}
 
 	// Check for required flags.

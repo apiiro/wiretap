@@ -13,7 +13,9 @@
             "args":["serve"],
             "env": {
                 "WIRETAP_APIIRO_DOMAIN": "app-staging.apiiro.com",
-                "WIRETAP_CONFIG_TOKEN": ""
+                "WIRETAP_CONFIG_TOKEN": "",
+                "HTTP_PROXY": "http://localserve.loc:8080",
+                "WIRETAP_VERBOSE": "true"
             }
         }
     ]
