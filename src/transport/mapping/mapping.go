@@ -54,6 +54,10 @@ func parseHostsMapping(input string) ([]HostMapping, error) {
 		// Remove leading or trailing spaces
 		mapping = strings.TrimSpace(mapping)
 
+		if len(mapping) == 0 {
+			continue
+		}
+
 		parts := strings.Split(mapping, ":")
 
 		host := parts[0]
