@@ -67,6 +67,7 @@ type wiretapDefaultConfig struct {
 	keepalive        int
 	mtu              int
 	apiiroDomain     string
+	mappingPrefix    string
 }
 
 // Defaults for serve command.
@@ -103,6 +104,7 @@ var wiretapDefault = wiretapDefaultConfig{
 	keepalive:        Keepalive,
 	mtu:              MTU,
 	apiiroDomain:     "app.apiiro.com",
+	mappingPrefix:    "10.1.0",
 }
 
 // Add serve command and set flags.
@@ -225,6 +227,7 @@ func init() {
 
 	viper.SetDefault("Apiiro.Domain", wiretapDefault.apiiroDomain)
 
+	viper.SetDefault("Mapping.Prefix", wiretapDefault.mappingPrefix)
 	cmd.Flags().SortFlags = false
 
 	// Hide deprecated flags and log flags.
