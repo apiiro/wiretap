@@ -228,6 +228,7 @@ func init() {
 	viper.SetDefault("Apiiro.Domain", wiretapDefault.apiiroDomain)
 
 	viper.SetDefault("Mapping.Prefix", wiretapDefault.mappingPrefix)
+
 	cmd.Flags().SortFlags = false
 
 	// Hide deprecated flags and log flags.
@@ -406,6 +407,10 @@ func (c serveCmdConfig) Run() {
 		fmt.Println(strings.Repeat("─", 32))
 	}
 	fmt.Println()
+
+	// Verify client public key
+	err = config.VerifyClientPublicKey(configRelay.GetPublicKey())
+	check("Failed to validate agent public key with the server. Please validate the agent is configured properly in Apiiro platform", err)
 
 	apiAddr, err := netip.ParseAddr(viper.GetString("E2EE.Interface.api"))
 	check("failed to parse API address", err)
