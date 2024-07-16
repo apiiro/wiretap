@@ -1,3 +1,9 @@
+# Apiiro Deployment
+
+* Create tag with new version `...-apiiro`
+* Run `docker.build.sh` to build image
+
+
 <div align="center">
 
 # <img align="center" src="media/wiretap_logo.png" width="20%"> Wiretap
