@@ -11,7 +11,7 @@ COPY ./src /wiretap
 
 RUN make OUTPUT=./wiretap VERSION=${VERSION}
 
-FROM alpine:3.19
+FROM alpine:3.20
 
 RUN apk update && \
     apk upgrade && \
