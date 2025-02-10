@@ -1,4 +1,4 @@
-FROM golang:1.21 AS build
+FROM golang:1.23 AS build
 
 ARG VERSION
 
@@ -11,7 +11,7 @@ COPY ./src /wiretap
 
 RUN make OUTPUT=./wiretap VERSION=${VERSION}
 
-FROM alpine:3.20
+FROM alpine:3.21
 
 RUN apk update && \
     apk upgrade && \
