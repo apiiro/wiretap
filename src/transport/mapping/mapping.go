@@ -183,6 +183,9 @@ func resolveIP(host string) (net.IP, error) {
 			log.Println("Unable to resolve IP", host, err.Error())
 			return nil, err
 		} else {
+			if viper.GetBool("verbose") {
+				log.Println("Resolved IP", host, resolvedIP.IP)
+			}
 			return resolvedIP.IP, nil
 		}
 	} else {
