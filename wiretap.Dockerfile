@@ -1,4 +1,4 @@
-FROM golang:1.25
+FROM golang:1.27
 
 ARG http_proxy
 ARG https_proxy
